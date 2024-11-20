@@ -12,6 +12,7 @@ contract StakedToken is ERC20, Ownable2Step, IERC4626 {
     address public manager;
     address public securityManager;
     uint256 public paused; // 0 for not paused, 1 for paused
+    uint256 reentrancyLock;
 
     // Note that shadow should be 18-decimal token.
     constructor(
@@ -39,6 +40,13 @@ contract StakedToken is ERC20, Ownable2Step, IERC4626 {
     modifier whenNotPaused() {
         require(paused == 0, "Paused");
         _;
+    }
+
+    modifier nonReentrant() {
+        require(reentrancyLock == 0, "ReentrancyGuard: reentrant call");
+        reentrancyLock = 1;
+        _;
+        reentrancyLock = 0;
     }
 
     function configSecurity(address _manager, address _securityManager) external onlyOwner {
@@ -247,7 +255,7 @@ contract StakedToken is ERC20, Ownable2Step, IERC4626 {
         emit Withdraw(caller, receiver, owner, assets, shares);
     }
 
-    function deposit(uint256 assets, address receiver) public whenNotPaused returns (uint256) {
+    function deposit(uint256 assets, address receiver) public nonReentrant whenNotPaused returns (uint256) {
         require(assets > 0, "Zero deposit");
         require(assets <= maxDeposit(receiver), "Exceeds max deposit");
         uint256 shares = previewDeposit(assets);
@@ -255,7 +263,7 @@ contract StakedToken is ERC20, Ownable2Step, IERC4626 {
         return shares;
     }
 
-    function mint(uint256 shares, address receiver) public whenNotPaused returns (uint256) {
+    function mint(uint256 shares, address receiver) public nonReentrant whenNotPaused returns (uint256) {
         require(shares > 0, "Zero mint");
         require(shares <= maxMint(receiver), "Exceeds max mint");
         uint256 assets = previewMint(shares);
@@ -263,7 +271,7 @@ contract StakedToken is ERC20, Ownable2Step, IERC4626 {
         return assets;
     }
 
-    function withdraw(uint256 assets, address receiver, address owner) public returns (uint256) {
+    function withdraw(uint256 assets, address receiver, address owner) public nonReentrant returns (uint256) {
         require(assets > 0, "Zero withdraw");
         require(assets <= maxWithdraw(owner), "Exceeds max withdraw");
         uint256 shares = previewWithdraw(assets);
@@ -271,7 +279,7 @@ contract StakedToken is ERC20, Ownable2Step, IERC4626 {
         return shares;
     }
 
-    function redeem(uint256 shares, address receiver, address owner) public returns (uint256) {
+    function redeem(uint256 shares, address receiver, address owner) public nonReentrant returns (uint256) {
         require(shares > 0, "Zero redeem");
         require(shares <= maxRedeem(owner), "Exceeds max redeem");
         uint256 assets = previewRedeem(shares);
