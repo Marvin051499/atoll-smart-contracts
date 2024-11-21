@@ -25,6 +25,11 @@ contract VelodromeDexAdapter is IAdapter, Ownable2Step {
     uint256 public addLiquiditySlippage = (1e18 * 999) / 1000; // 0.1%
     uint256 public buySlippage = (1e18 * 997) / 1000; // 0.3%
     uint256 public sellSlippage = (1e18 * 997) / 1000; // 0.3%
+    bool public isStable = true;
+
+    function configIsStable(bool _isStable) external onlyOwner {
+        isStable = _isStable;
+    }
 
     function configSecurity(
         uint256 _addLiquidReserveUpperBond,
@@ -132,7 +137,7 @@ contract VelodromeDexAdapter is IAdapter, Ownable2Step {
         IVelodromeRouter(veloRouter).addLiquidity(
             pegCoin,
             stableCoin,
-            true,
+            isStable,
             _amountPeg,
             _amountStable,
             _minAmountPeg,
@@ -173,7 +178,7 @@ contract VelodromeDexAdapter is IAdapter, Ownable2Step {
         }
         IERC20(veloPair).safeIncreaseAllowance(veloRouter, _amountLP);
         IVelodromeRouter(veloRouter).removeLiquidity(
-            pegCoin, stableCoin, true, _amountLP, _minPeg, _minStable, AMO, block.timestamp
+            pegCoin, stableCoin, isStable, _amountLP, _minPeg, _minStable, AMO, block.timestamp
         );
         // deposit the rest of LP tokens
         uint256 LPBal = IERC20(veloPair).balanceOf(address(this));
@@ -192,7 +197,7 @@ contract VelodromeDexAdapter is IAdapter, Ownable2Step {
         routes[0] = IVelodromeRouter.Route({
             from: stableCoin,
             to: pegCoin,
-            stable: true,
+            stable: isStable,
             factory: veloFactory
         });
         IVelodromeRouter(veloRouter).swapExactTokensForTokens(
@@ -212,7 +217,7 @@ contract VelodromeDexAdapter is IAdapter, Ownable2Step {
         routes[0] = IVelodromeRouter.Route({
             from: pegCoin,
             to: stableCoin,
-            stable: true,
+            stable: isStable,
             factory: veloFactory
         });
         IVelodromeRouter(veloRouter).swapExactTokensForTokens(
