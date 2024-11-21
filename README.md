@@ -26,9 +26,10 @@ In this audit, we are particular interested in the following aspects (while all 
 - If the StakedToken holders can suffer from a loss.
 - Any token/value that will be stuck in the contract.
 - In case of emergency (e.g., the integrating protocol is hacked), the owner can rescue as much as possible assets and will not revert.
+- We would like to understand any risks related to the decimals of the stable token (e.g., atBTC-BTC with 8 decimals and atUSDC-USDC with 6 decimals).
 
 Besides, we make the following assumptions:
-- The multi sig wallet is honest and will not make any malicious actions.
+- The governance multi sig is honest and will not make any malicious actions.
 - If the manager, security manager, or the profit manager is compromised, They cannot steal more than 5% of the TVL within 24 hours.
 
 ## Known Issues
