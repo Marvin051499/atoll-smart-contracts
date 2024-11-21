@@ -26,9 +26,11 @@ contract VelodromeDexAdapter is IAdapter, Ownable2Step {
     uint256 public buySlippage = (1e18 * 997) / 1000; // 0.3%
     uint256 public sellSlippage = (1e18 * 997) / 1000; // 0.3%
     bool public isStable = true;
+    bool public enableSwap = true;
 
-    function configIsStable(bool _isStable) external onlyOwner {
+    function config(bool _isStable, bool _enableSwap) external onlyOwner {
         isStable = _isStable;
+        enableSwap = _enableSwap;
     }
 
     function configSecurity(
@@ -182,10 +184,14 @@ contract VelodromeDexAdapter is IAdapter, Ownable2Step {
         );
         // deposit the rest of LP tokens
         uint256 LPBal = IERC20(veloPair).balanceOf(address(this));
-        if (LPBal > 0) IVelodromeGauge(veloGauge).deposit(LPBal, address(this));
+        if (LPBal > 0) {
+            IERC20(veloPair).safeIncreaseAllowance(veloGauge, LPBal);
+            IVelodromeGauge(veloGauge).deposit(LPBal, address(this));
+        }
     }
 
     function buyPegCoin(uint256 amountStable, uint256 minAmountPeg) external override onlyAMO {
+        require(enableSwap, "Swap Disabled");
         // step - 0: input validation
         require(amountStable > 0, "Invalid Amounts");
         require(minAmountPeg >= amountStable * decimalDiff * buySlippage / ONE, "Invalid Min Amount");
@@ -206,6 +212,7 @@ contract VelodromeDexAdapter is IAdapter, Ownable2Step {
     }
 
     function sellPegCoin(uint256 amountPeg, uint256 minAmounStable) external override onlyAMO {
+        require(enableSwap, "Swap Disabled");
         // step - 0: input validation
         require(amountPeg > 0, "Invalid Amounts");
         require(minAmounStable * decimalDiff >= amountPeg * sellSlippage / ONE, "Invalid Min Amount");
