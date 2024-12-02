@@ -75,8 +75,13 @@ contract RebalanceAMO is Ownable2Step {
     address public stableCoin; // The stable coin that forms the pair with our token
     address public adapter; // the dex adapter implementing our interface
     address public oracle; // the oracle to read the price between pegCoin and stableCoin
+    // @audit: one-shot address configuration
+    bool _addressConfiged;
 
     function configAddress(address _pegCoin, address _stableCoin, address _adapter, address _oracle) external onlyOwner {
+        // @audit: one-shot address configuration
+        require(!_addressConfiged, "Address already configured");
+        _addressConfiged = true;
         require(_pegCoin != address(0) && _stableCoin != address(0) && _adapter != address(0), "AMO: Zero address"); // Added zero address checks
         pegCoin = _pegCoin;
         stableCoin = _stableCoin;

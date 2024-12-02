@@ -9,7 +9,7 @@ contract Auth_test is aero_base_ateth_test_base_clp {
         super.setUp();
     }
 
-    function test_initialize() public pure {
+    function test_initialize_CLP() public pure {
         console2.log("Tested initialize");
     }
 }

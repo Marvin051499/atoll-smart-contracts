@@ -56,23 +56,6 @@ contract Rebalance_amo_operations is aero_base_ateth_test_base {
         assertEq(amo.sellSlippage(), newSellSlippage, "Sell slippage should be updated");
     }
 
-    function test_configAddress() public {
-        console2.log("=== Testing RebalanceAMO configAddress function ===");
-        address newPegCoin = address(0xabc);
-        address newStableCoin = address(0xdef);
-        address newAdapter = address(0x123);
-        address newOracle = address(0x456);
-
-        vm.startPrank(multiSig);
-        amo.configAddress(newPegCoin, newStableCoin, newAdapter, newOracle);
-        vm.stopPrank();
-
-        assertEq(amo.pegCoin(), newPegCoin, "Peg coin should be updated");
-        assertEq(amo.stableCoin(), newStableCoin, "Stable coin should be updated");
-        assertEq(amo.adapter(), newAdapter, "Adapter should be updated");
-        assertEq(amo.oracle(), newOracle, "Oracle should be updated");
-    }
-
     function test_sell_add() public {
         // 1. user use WETH to buy atETH
         vm.startPrank(user, user);

@@ -58,6 +58,8 @@ contract VelodromeDexAdapter is IAdapter, Ownable2Step {
     address veloRouter;
     address veloFactory;
     address[] veloRewardToken;
+    // @audit: one-shot address configuration
+    bool _addressConfiged;
 
     function configAddress(
         address _AMO,
@@ -69,6 +71,9 @@ contract VelodromeDexAdapter is IAdapter, Ownable2Step {
         address _veloFactory,
         address[] memory _veloRewardToken
     ) external onlyOwner {
+        // @audit: one-shot address configuration
+        require(!_addressConfiged, "Address already configured");
+        _addressConfiged = true;
         AMO = _AMO;
         pegCoin = _pegCoin;
         stableCoin = _stableCoin;
@@ -123,6 +128,13 @@ contract VelodromeDexAdapter is IAdapter, Ownable2Step {
         _;
     }
 
+    function _setAllowanceToZero(address token, address spender) internal {
+        uint256 allowance = IERC20(token).allowance(address(this), spender);
+        if (allowance > 0) {
+            IERC20(token).safeDecreaseAllowance(spender, allowance);
+        }
+    }
+
     function addLiquidity(uint256 _amountPeg, uint256 _amountStable, uint256 _minAmountLP) external override onlyAMO onlyCalm {
         // 0 - input validation
         require(_amountPeg > 0 && _amountStable > 0, "Invalid Amounts");
@@ -153,6 +165,10 @@ contract VelodromeDexAdapter is IAdapter, Ownable2Step {
         IERC20(veloPair).safeIncreaseAllowance(veloGauge, balLP);
         IVelodromeGauge(veloGauge).deposit(balLP, address(this));
         _transferPegAndStableToAMO();
+
+        // @audit: decrease allowance for the router
+        _setAllowanceToZero(stableCoin, veloRouter);
+        _setAllowanceToZero(pegCoin, veloRouter);
         // After return, AMO will check the received amount of LP tokens
     }
 
@@ -209,6 +225,8 @@ contract VelodromeDexAdapter is IAdapter, Ownable2Step {
         IVelodromeRouter(veloRouter).swapExactTokensForTokens(
             amountStable, minAmountPeg, routes, AMO, block.timestamp
         );
+        // @audit: decrease allowance for the router
+        _setAllowanceToZero(stableCoin, veloRouter);
     }
 
     function sellPegCoin(uint256 amountPeg, uint256 minAmounStable) external override onlyAMO {
@@ -230,6 +248,8 @@ contract VelodromeDexAdapter is IAdapter, Ownable2Step {
         IVelodromeRouter(veloRouter).swapExactTokensForTokens(
             amountPeg, minAmounStable, routes, AMO, block.timestamp
         );
+        // @audit: decrease allowance for the router
+        _setAllowanceToZero(pegCoin, veloRouter);
     }
 
     function getReward(address profitManager) external override onlyAMO {

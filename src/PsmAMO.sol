@@ -61,8 +61,13 @@ contract PsmAMO is Ownable2Step {
     uint256 public fee = 2e14; // 0.02%
     uint256 constant ONE_HUNDRED_PERCENT = 1e18;
     uint256 decimalsRate;
+    // @audit: one-shot address configuration
+    bool _addressConfiged;
 
     function configAddress(address _peg, address _stable, address[] memory _AMO, uint256 _fee) external onlyOwner {
+        // @audit: one-shot address configuration
+        require(!_addressConfiged, "Address already configured");
+        _addressConfiged = true;
         pegCoin = _peg;
         stableCoin = _stable;
         decimalsRate = 10 ** (18 - ERC20(stableCoin).decimals());
@@ -72,6 +77,14 @@ contract PsmAMO is Ownable2Step {
         }
         fee = _fee;
         emit AddressConfigured(_peg, _stable, _AMO, _fee);
+    }
+
+    function setFee(uint256 _fee) external onlyOwner {
+        fee = _fee;
+    }
+
+    function setReceipts(address[] memory _receipts) external onlyOwner {
+        receipts = _receipts;
     }
 
     // === CONVERTIONS & TRANSFERS ===

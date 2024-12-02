@@ -45,22 +45,17 @@ contract PSM_AMO_Test is aero_base_ateth_test_base {
 
     function test_configAddress() public {
         console2.log("=== Testing PSM configAddress function ===");
-        address newPeg = address(ateth);
-        address newStable = address(WETH);
         address[] memory newAMOs = new address[](2);
         newAMOs[0] = address(0xdef);
         newAMOs[1] = address(0x123);
         uint256 newFee = 1e16; // 1%
 
-        vm.expectEmit(true, true, true, true);
-        emit AddressConfigured(newPeg, newStable, newAMOs, newFee);
 
         vm.startPrank(multiSig);
-        psm.configAddress(newPeg, newStable, newAMOs, newFee);
+        psm.setReceipts(newAMOs);
+        psm.setFee(newFee);
         vm.stopPrank();
 
-        assertEq(psm.pegCoin(), newPeg, "Peg coin should be updated");
-        assertEq(psm.stableCoin(), newStable, "Stable coin should be updated");
         assertEq(psm.receipts(0), newAMOs[0], "First AMO should be updated");
         assertEq(psm.receipts(1), newAMOs[1], "Second AMO should be updated");
         assertEq(psm.fee(), newFee, "Fee should be updated");
@@ -253,7 +248,8 @@ contract PSM_AMO_Test is aero_base_ateth_test_base {
         currentAMOs[0] = address(amo);
 
         vm.startPrank(multiSig);
-        psm.configAddress(psm.pegCoin(), psm.stableCoin(), currentAMOs, newFee);
+        psm.setReceipts(currentAMOs);
+        psm.setFee(newFee);
         vm.stopPrank();
 
         uint256 convertAmount = 100 ether;
@@ -282,7 +278,7 @@ contract PSM_AMO_Test is aero_base_ateth_test_base {
         newAMOs[1] = newAMO;
 
         vm.startPrank(multiSig);
-        psm.configAddress(psm.pegCoin(), psm.stableCoin(), newAMOs, 0);
+        psm.setReceipts(newAMOs);
         vm.stopPrank();
 
         uint256 sendAmount = 5 ether;

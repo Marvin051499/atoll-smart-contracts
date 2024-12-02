@@ -47,7 +47,9 @@ contract VelodromeCLPAdapter is IAdapter, Ownable2Step {
     address public veloFactory;
     address public nftManager;
     address[] public veloRewardToken;
-
+    // @audit: one-shot address configuration
+    bool _addressConfiged;
+    
     function configAddress(
         address _AMO,
         address _pegCoin,
@@ -59,6 +61,9 @@ contract VelodromeCLPAdapter is IAdapter, Ownable2Step {
         address _nftManager,
         address[] memory _veloRewardToken
     ) external onlyOwner {
+        // @audit: one-shot address configuration
+        require(!_addressConfiged, "Address already configured");
+        _addressConfiged = true;
         AMO = _AMO;
         pegCoin = _pegCoin;
         stableCoin = _stableCoin;
@@ -96,6 +101,13 @@ contract VelodromeCLPAdapter is IAdapter, Ownable2Step {
     int24 public tickUpper;
 
     // all these parameters should only be set once
+
+    function _setAllowanceToZero(address token, address spender) internal {
+        uint256 allowance = IERC20(token).allowance(address(this), spender);
+        if (allowance > 0) {
+            IERC20(token).safeDecreaseAllowance(spender, allowance);
+        }
+    }
 
     function _transferTokenTo(address token, address recipient) internal {
         uint balance = IERC20(token).balanceOf(address(this));
@@ -181,6 +193,9 @@ contract VelodromeCLPAdapter is IAdapter, Ownable2Step {
         // stake into gauge
         IVelodromeGaugeCLP(veloGauge).deposit(nftID);   
         _transferPegAndStableToAMO();
+        // @audit: decrease allowance for the router
+        _setAllowanceToZero(stableCoin, veloRouter);
+        _setAllowanceToZero(pegCoin, veloRouter);
     }
 
     // We do not need to check slippage when redeeming.
@@ -238,6 +253,8 @@ contract VelodromeCLPAdapter is IAdapter, Ownable2Step {
             sqrtPriceLimitX96: 0
         });
         ISwapRouterCLP(veloRouter).exactInputSingle(params);
+        // @audit: decrease allowance for the router
+        _setAllowanceToZero(stableCoin, veloRouter);
     }
 
     function sellPegCoin(uint256 amountPeg, uint256 minAmounStable) external override onlyAMO {
@@ -259,6 +276,8 @@ contract VelodromeCLPAdapter is IAdapter, Ownable2Step {
             sqrtPriceLimitX96: 0
         });
         ISwapRouterCLP(veloRouter).exactInputSingle(params);
+        // @audit: decrease allowance for the router
+        _setAllowanceToZero(pegCoin, veloRouter);
     }
 
     function getReward(address profitManager) external override onlyAMO {

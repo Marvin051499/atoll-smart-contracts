@@ -32,13 +32,6 @@ contract Auth_test is aero_base_ateth_test_base_clp {
         vm.startPrank(owner);
         vm.expectRevert();
         amo.configAddress(address(ateth), address(WETH), address(adapter), address(oracle));
-        vm.startPrank(multiSig);
-        amo.configAddress(address(ateth), address(WETH), address(adapter), address(oracle));
-        vm.assertEq(amo.pegCoin(), address(ateth));
-        vm.assertEq(amo.stableCoin(), address(WETH));
-        vm.assertEq(amo.adapter(), address(adapter));
-        vm.assertEq(amo.oracle(), address(oracle));
-        console2.log("[Rebalance AMO] configAddress tested");
     }
 
 
