@@ -9,6 +9,14 @@ out/
 
 # Docs
 docs/
+tmp/
 
 # Dotenv file
 .env
+
+# Anvil
+script
+
+flattened/
+broadcast/
+anvil_deploy.sh
